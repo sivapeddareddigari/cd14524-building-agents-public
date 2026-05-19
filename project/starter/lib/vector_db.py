@@ -66,7 +66,7 @@ class VectorStore:
             metadatas=item_dict["metadatas"]
         )
 
-    def query(self, query_texts: str | List[str], n_results: int = 3,
+    def query(self, query_texts: List[str], n_results: int = 3,
               where: Optional[Dict[str, Any]] = None,
               where_document: Optional[Dict[str, Any]] = None) -> QueryResult:
         """
