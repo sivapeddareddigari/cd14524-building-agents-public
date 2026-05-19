@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, TypedDict, Union
 
 from lib.state_machine import EntryPoint, Run, StateMachine, Step, Termination
 from lib.udaplay_reporting import format_text_report
-from lib.udaplay_tools import evaluate_retrieval, game_web_search, retrieve_game
+from lib.udaplay_tools import evaluate_retrieval, game_web_search, retrieve_game, get_udaplay_tools
 from lib.udaplay_vector_store import UdaPlayVectorStore
 
 
@@ -23,8 +23,9 @@ class UdaPlayState(TypedDict, total=False):
 
 
 class UdaPlayAgent:
-    def __init__(self, vector_store: UdaPlayVectorStore):
+    def __init__(self, vector_store: UdaPlayVectorStore, tools: Optional[List[Any]] = None):
         self.vector_store = vector_store
+        self.tools = tools or get_udaplay_tools()
         self.session_history: Dict[str, List[Run]] = {}
         self.workflow = self._create_workflow()
 
