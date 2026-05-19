@@ -1,0 +1,56 @@
+[
+    {
+      "title": "FIFA 21",
+      "developer": "EA Vancouver and EA Romania",
+      "publisher": "Electronic Arts",
+      "release_date": "October 9, 2020",
+      "platforms": ["Microsoft Windows", "PlayStation 4", "Xbox One", "Nintendo Switch"],
+      "genre": "Sports",
+      "description": "FIFA 21 is a football simulation video game in the FIFA series."
+    },
+    {
+      "title": "God of War Ragnarok",
+      "developer": "Santa Monica Studio",
+      "publisher": "Sony Interactive Entertainment",
+      "release_date": "November 9, 2022",
+      "platforms": ["PlayStation 4", "PlayStation 5", "Windows"],
+      "genre": "Action-adventure",
+      "description": "God of War Ragnarok follows Kratos and Atreus through the Norse realms."
+    },
+    {
+      "title": "Pokémon Red",
+      "developer": "Game Freak",
+      "publisher": "Nintendo",
+      "release_date": "February 27, 1996",
+      "platforms": ["Game Boy"],
+      "genre": "Role-playing",
+      "description": "Pokémon Red is one of the first Pokémon role-playing games released for the Game Boy."
+    },
+    {
+      "title": "Grand Theft Auto V",
+      "developer": "Rockstar North",
+      "publisher": "Rockstar Games",
+      "release_date": "September 17, 2013",
+      "platforms": ["PlayStation 3", "Xbox 360", "PlayStation 4", "Xbox One", "Windows", "PlayStation 5", "Xbox Series X/S"],
+      "genre": "Action-adventure",
+      "description": "Grand Theft Auto V is an open-world action-adventure game developed by Rockstar North."
+    },
+    {
+      "title": "The Legend of Zelda: Breath of the Wild",
+      "developer": "Nintendo EPD",
+      "publisher": "Nintendo",
+      "release_date": "March 3, 2017",
+      "platforms": ["Nintendo Switch", "Wii U"],
+      "genre": "Action-adventure",
+      "description": "An open-world Zelda game set in Hyrule."
+    },
+    {
+      "title": "Minecraft",
+      "developer": "Mojang Studios",
+      "publisher": "Mojang Studios",
+      "release_date": "November 18, 2011",
+      "platforms": ["Windows", "macOS", "Linux", "Xbox", "PlayStation", "Nintendo Switch", "iOS", "Android"],
+      "genre": "Sandbox",
+      "description": "Minecraft is a sandbox game focused on building, exploration, and survival."
+    }
+  ]  
