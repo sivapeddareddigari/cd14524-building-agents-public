@@ -1,4 +1,5 @@
-# UdaPlay tools 
+# lib/udaplay_tools.py
+
 from __future__ import annotations
 
 import os
@@ -22,31 +23,56 @@ def configure_udaplay_tools(vector_store: UdaPlayVectorStore) -> None:
 
 def _require_vector_store() -> UdaPlayVectorStore:
     
+    global _vector_store
+
     if _vector_store is None:
-        raise RuntimeError(
-            "UdaPlay tools are not configured. "
-            "Call configure_udaplay_tools(vector_store) before using the tools."
+        _vector_store = UdaPlayVectorStore(
+            persist_dir="./chroma_db/udaplay_games",
+            collection_name="udaplay_games",
+            reset_collection=False,
         )
+
     return _vector_store
 
 
 @tool
-def retrieve_game(query: str, top_k: int = 5) -> Dict[str, Any]:
+@tool
+def retrieve_game(query: str, top_k: int = 3) -> Dict[str, Any]:
     
     store = _require_vector_store()
-    results = store.search_games(query=query, top_k=top_k)
+    raw_results = store.search_games(query=query, top_k=top_k)
+
+    compact_results = []
+
+    for r in raw_results:
+        metadata = r.get("metadata", {}) or {}
+
+        compact_results.append(
+            {
+                "title": metadata.get("title", ""),
+                "developer": metadata.get("developer", ""),
+                "publisher": metadata.get("publisher", ""),
+                "release_date": metadata.get("release_date", ""),
+                "platforms": metadata.get("platforms", ""),
+                "genre": metadata.get("genre", ""),
+                "source": metadata.get("source", "local_game_dataset"),
+                "similarity": r.get("similarity", 0.0),
+                "citation": f"Local dataset: {metadata.get('title', '')}",
+            }
+        )
 
     return {
         "tool": "retrieve_game",
         "query": query,
         "top_k": top_k,
-        "results": results,
+        "results": compact_results,
         "source": "local_vector_db",
     }
-
-
 @tool
-def evaluate_retrieval(query: str, retrieved_results: List[Dict[str, Any]]) -> Dict[str, Any]:
+def evaluate_retrieval(
+    query: str,
+    retrieved_results: List[Dict[str, Any]],
+) -> Dict[str, Any]:
     
     query_lower = query.lower()
 
@@ -56,10 +82,12 @@ def evaluate_retrieval(query: str, retrieved_results: List[Dict[str, Any]]) -> D
         "latest",
         "recent",
         "working on",
+        "ongoing",
         "upcoming",
         "announced",
         "today",
         "this year",
+        "now",
     ]
 
     if any(term in query_lower for term in time_sensitive_terms):
@@ -67,8 +95,11 @@ def evaluate_retrieval(query: str, retrieved_results: List[Dict[str, Any]]) -> D
             "tool": "evaluate_retrieval",
             "is_sufficient": False,
             "confidence": "low",
-            "reason": "The query appears time-sensitive, so local static data may be outdated.",
-            "missing_information": ["current or recent information"],
+            "reason": (
+                "The query asks for current or time-sensitive information. "
+                "The local vector database may be outdated, so web fallback is required."
+            ),
+            "missing_information": ["current web information"],
         }
 
     if not retrieved_results:
@@ -77,39 +108,27 @@ def evaluate_retrieval(query: str, retrieved_results: List[Dict[str, Any]]) -> D
             "is_sufficient": False,
             "confidence": "low",
             "reason": "No local retrieval results were found.",
-            "missing_information": ["game information"],
+            "missing_information": ["local game information"],
         }
 
     top_result = retrieved_results[0]
     similarity = float(top_result.get("similarity", 0.0))
-    document = top_result.get("document", "").lower()
-    metadata = top_result.get("metadata", {})
-
-    requested_fields = []
-
-    if "developed" in query_lower or "developer" in query_lower:
-        requested_fields.append("developer")
-    if "released" in query_lower or "release date" in query_lower or "when was" in query_lower:
-        requested_fields.append("release_date")
-    if "platform" in query_lower or "launched on" in query_lower:
-        requested_fields.append("platforms")
-    if "publisher" in query_lower or "published" in query_lower:
-        requested_fields.append("publisher")
-    if "genre" in query_lower:
-        requested_fields.append("genre")
-
+    
     missing_fields = []
-    for field in requested_fields:
-        value = metadata.get(field, "")
-        if not value:
-            missing_fields.append(field)
+
+for field in requested_fields:
+    value = top_result.get(field)
+    if value is None or str(value).strip() == "":
+        missing_fields.append(field)
 
     if similarity >= 0.45 and not missing_fields:
         return {
             "tool": "evaluate_retrieval",
             "is_sufficient": True,
             "confidence": "high",
-            "reason": "The top local result appears relevant and contains the requested information.",
+            "reason": (
+                "The top local result is relevant and contains the requested information."
+            ),
             "top_similarity": similarity,
             "missing_information": [],
         }
@@ -119,7 +138,9 @@ def evaluate_retrieval(query: str, retrieved_results: List[Dict[str, Any]]) -> D
             "tool": "evaluate_retrieval",
             "is_sufficient": True,
             "confidence": "medium",
-            "reason": "The local result is moderately relevant and contains the requested information.",
+            "reason": (
+                "The local result is moderately relevant and contains the requested information."
+            ),
             "top_similarity": similarity,
             "missing_information": [],
         }
@@ -128,9 +149,11 @@ def evaluate_retrieval(query: str, retrieved_results: List[Dict[str, Any]]) -> D
         "tool": "evaluate_retrieval",
         "is_sufficient": False,
         "confidence": "low",
-        "reason": "The retrieved result was weak or missing the requested field.",
+        "reason": (
+            "The retrieved result was weak or did not contain the requested information."
+        ),
         "top_similarity": similarity,
-        "missing_information": missing_fields or ["reliable matching local answer"],
+        "missing_information": missing_fields or ["reliable matching answer"],
     }
 
 
@@ -170,7 +193,7 @@ def game_web_search(query: str, search_depth: str = "advanced") -> Dict[str, Any
 
 
 def persist_web_result_to_memory(query: str, web_result: Dict[str, Any]) -> Optional[str]:
-
+    
     store = _require_vector_store()
 
     answer = web_result.get("answer", "")
@@ -186,7 +209,7 @@ def persist_web_result_to_memory(query: str, web_result: Dict[str, Any]) -> Opti
     )
 
 
-def get_udaplay_tools():
+def get_udaplay_tools() -> List[Any]:
     
     return [
         retrieve_game,
